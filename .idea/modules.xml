@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/flinkclient.iml" filepath="$PROJECT_DIR$/flinkclient.iml" />
+      <module fileurl="file://$PROJECT_DIR$/flinkcollect/flinkcollect.iml" filepath="$PROJECT_DIR$/flinkcollect/flinkcollect.iml" />
+      <module fileurl="file://$PROJECT_DIR$/flinkparse/flinkparse.iml" filepath="$PROJECT_DIR$/flinkparse/flinkparse.iml" />
+    </modules>
+  </component>
+</project>
