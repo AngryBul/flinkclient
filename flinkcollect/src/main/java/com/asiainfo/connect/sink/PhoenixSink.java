@@ -29,8 +29,6 @@ public class PhoenixSink extends RichSinkFunction {
 
     private Connection connection;
 
-    private Map<String,String> partitionOffsetMap;
-
     private String jobId;
 
     private JobConfigBean jobConfig;
@@ -55,19 +53,25 @@ public class PhoenixSink extends RichSinkFunction {
         implTableParseMap = new ConcurrentHashMap<>();
         String tables = jobConfig.getTableName();
         String[] tableArray = tables.split(",",-1);
+        System.out.println("tableArray="+Arrays.toString(tableArray));
+        connection = connectionPool.getConnection();
         for (String table:tableArray)
         {
             String[] tableParses = table.split(":",-1);
+            System.out.println("tableParses[0]="+tableParses[0]);
             messageQueue.put(tableParses[0],new LinkedBlockingQueue<>());
             implTableParseMap.put(tableParses[0],(ITableMessageParse) Class.forName(tableParses[1]).getDeclaredConstructors()[0].newInstance());
+
             new Thread(()->{
-                partitionOffsetMap = new ConcurrentHashMap<>();
+                Map partitionOffsetMap = new ConcurrentHashMap<>();
                 Statement statement = null;
+                Connection connection = null;
                 try {
                     connection = connectionPool.getConnection();
                     connection.setAutoCommit(false);
                     statement = connection.createStatement();
                 } catch (SQLException e) {
+                    System.out.println(e);
                     e.printStackTrace();
                 }
                 LinkedBlockingQueue<ConsumerRecord<String,String>> tableQueue =  messageQueue.get(tableParses[0]);
@@ -85,35 +89,37 @@ public class PhoenixSink extends RichSinkFunction {
                                 statement.addBatch(sql);
                             }
                         } catch (Exception e) {
+                            System.out.println(e);
                             logger.error("入表 "+tableParses[0].toUpperCase()+" 出错!",e);
                         }
 
                         partitionOffsetMap.put("topic",consumerRecord.topic());
                         partitionOffsetMap.put("groupid",jobConfig.getGroupId());
+                        partitionOffsetMap.put("tablename",tableParses[0].toUpperCase());
                         partitionOffsetMap.put("partition",String.valueOf(consumerRecord.partition()));
                         partitionOffsetMap.put("partitionoffset",String.valueOf(consumerRecord.offset()));
                         partitionOffsetMap.put("timestamp",CommonUtils.getCurrentTime());
                         count++;
                     }
                     long now = System.currentTimeMillis();
-                    if((count!=0&&count%30000==0)||(now - start>30000&&!partitionOffsetMap.isEmpty()))
+                    if((count!=0&&count%3000==0)||(now - start>10000&&!partitionOffsetMap.isEmpty()))
                     {
-                        System.out.println(Thread.currentThread().getName()+" : count="+count+": "+(now - start));
-
+                        start = now;
+                        count = 0;
                         String offsetSql = genOffsetSql(partitionOffsetMap);
+                        System.out.println(Thread.currentThread().getName()+" : offsetsql="+offsetSql);
                         try {
                             statement.addBatch(offsetSql);
                             statement.executeBatch();
                             connection.commit();
                             statement.close();
-                            System.out.println(Thread.currentThread().getName()+" : statement="+statement.isClosed());
                             statement = connection.createStatement();
                         } catch (SQLException e) {
                             e.printStackTrace();
+                            System.out.println(e);
                             logger.error("入表 kafka_offset 出错!",e);
                         }
-                        start = now;
-                        count = 0;
+
                     }
 
                 }
@@ -162,7 +168,6 @@ public class PhoenixSink extends RichSinkFunction {
         String tableName = headMap.get(ITableMessageParse.TABLE_NAME);
         if(!confTableName.toUpperCase().equals(tableName))
         {
-            System.out.println("confTableName.toUpperCase()="+confTableName.toUpperCase());
             return sql;
         }
         if("Insert".equals(operate)||"Update".equals(operate))

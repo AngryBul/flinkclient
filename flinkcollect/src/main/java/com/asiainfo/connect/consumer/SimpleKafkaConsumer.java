@@ -142,11 +142,16 @@ public class SimpleKafkaConsumer extends RichParallelSourceFunction<Object> {
             Statement statement = connection.createStatement();
             System.out.println("sql="+sql);
             ResultSet resultSet = statement.executeQuery(sql);
+            long initoffset =0L;
             while(resultSet.next())
             {
-                Long offset = Long.parseLong(resultSet.getString("partitionoffset"));
+                long offset = Long.parseLong(resultSet.getString("partitionoffset"));
+                if(offset>initoffset)
+                {
+                    initoffset = offset;
+                }
                 Integer partition = Integer.parseInt(resultSet.getString("partition"));
-                resultMap.put(partition,offset);
+                resultMap.put(partition,initoffset);
             }
             resultSet.close();
             statement.close();
