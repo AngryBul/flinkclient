@@ -18,8 +18,8 @@ public class FlinkConnectFactory {
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
             env.setParallelism(Integer.parseInt(parallelism));
             env.enableCheckpointing(1000);
-            SourceFunction sourceFunction = (SourceFunction)Class.forName(jobConfig.getSourceName()).getDeclaredConstructor(String.class,JobConfigBean.class).newInstance(jobId,jobConfig);
-            SinkFunction sinkFunction = (SinkFunction) Class.forName(jobConfig.getTopicName()).getDeclaredConstructor(String.class,JobConfigBean.class).newInstance(jobId,jobConfig);
+            SourceFunction<Object> sourceFunction = (SourceFunction<Object>)Class.forName(jobConfig.getSourceName()).getDeclaredConstructor(String.class,JobConfigBean.class).newInstance(jobId,jobConfig);
+            SinkFunction sinkFunction = (SinkFunction) Class.forName(jobConfig.getSinkName()).getDeclaredConstructor(String.class,JobConfigBean.class).newInstance(jobId,jobConfig);
             DataStream stream =env.addSource(sourceFunction);
             stream.addSink(sinkFunction);
             env.execute();

@@ -21,7 +21,7 @@ public class CommonUtils {
         JobConfigBean jobConfigBean = new JobConfigBean();
         try {
             Connection connection = connectionPool.getConnection();
-            String sql = "select sourcename,sinkname,tablename,groupid,topicname,consumepartition,parallelism from flink_job_config where jobid=%s";
+            String sql = "select sourcename,sinkname,tablename,groupid,topicname,consumepartitions,parallelism from flink_job_config where jobid=%s";
             sql = String.format(sql,jobId);
             Statement statement = connection.createStatement();
             System.out.println("sql="+sql);
@@ -33,7 +33,7 @@ public class CommonUtils {
                 jobConfigBean.setTableName(resultSet.getString("tablename"));
                 jobConfigBean.setGroupId(resultSet.getString("groupid"));
                 jobConfigBean.setTopicName(resultSet.getString("topicname"));
-                jobConfigBean.setConsumePartition(resultSet.getString("consumepartition"));
+                jobConfigBean.setConsumePartition(resultSet.getString("consumepartitions"));
                 jobConfigBean.setParallelism(resultSet.getString("parallelism"));
             }
             resultSet.close();

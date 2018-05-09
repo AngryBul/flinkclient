@@ -17,7 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
-public class SimpleKafkaConsumer extends RichParallelSourceFunction {
+public class SimpleKafkaConsumer extends RichParallelSourceFunction<Object> {
 
     private boolean isRunning = true;
 
@@ -112,7 +112,7 @@ public class SimpleKafkaConsumer extends RichParallelSourceFunction {
         this.cancel();
     }
 
-    public void run(SourceContext sourceContext) throws Exception {
+    public void run(SourceContext<Object> sourceContext) throws Exception {
         while(isRunning)
         {
             while (true) {

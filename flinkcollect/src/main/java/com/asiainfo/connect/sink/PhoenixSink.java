@@ -51,20 +51,25 @@ public class PhoenixSink extends RichSinkFunction {
         super.open(parameters);
         logger = LoggerFactory.getLogger(PhoenixSink.class);
         PhoenixConnectionPool connectionPool = PhoenixConnectionFactory.createConnnectionPool(ConstantConfig.ZK_URL);
-        partitionOffsetMap = new ConcurrentHashMap<>();
         messageQueue= new ConcurrentHashMap<>();
         implTableParseMap = new ConcurrentHashMap<>();
         String tables = jobConfig.getTableName();
         String[] tableArray = tables.split(",",-1);
         for (String table:tableArray)
         {
-            connection = connectionPool.getConnection();
-            connection.setAutoCommit(false);
-            Statement statement = connection.createStatement();
             String[] tableParses = table.split(":",-1);
             messageQueue.put(tableParses[0],new LinkedBlockingQueue<>());
             implTableParseMap.put(tableParses[0],(ITableMessageParse) Class.forName(tableParses[1]).getDeclaredConstructors()[0].newInstance());
             new Thread(()->{
+                partitionOffsetMap = new ConcurrentHashMap<>();
+                Statement statement = null;
+                try {
+                    connection = connectionPool.getConnection();
+                    connection.setAutoCommit(false);
+                    statement = connection.createStatement();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
                 LinkedBlockingQueue<ConsumerRecord<String,String>> tableQueue =  messageQueue.get(tableParses[0]);
                 long count = 0L;
                 long start = System.currentTimeMillis();
@@ -88,23 +93,27 @@ public class PhoenixSink extends RichSinkFunction {
                         partitionOffsetMap.put("partition",String.valueOf(consumerRecord.partition()));
                         partitionOffsetMap.put("partitionoffset",String.valueOf(consumerRecord.offset()));
                         partitionOffsetMap.put("timestamp",CommonUtils.getCurrentTime());
+                        count++;
                     }
-                    count++;
                     long now = System.currentTimeMillis();
-                    if(count%2000==0||now - start>30000)
+                    if((count!=0&&count%30000==0)||(now - start>30000&&!partitionOffsetMap.isEmpty()))
                     {
-                        start = now;
+                        System.out.println(Thread.currentThread().getName()+" : count="+count+": "+(now - start));
+
                         String offsetSql = genOffsetSql(partitionOffsetMap);
-                        System.out.println("offsetsql="+offsetSql);
                         try {
                             statement.addBatch(offsetSql);
                             statement.executeBatch();
                             connection.commit();
-                            statement.clearBatch();
+                            statement.close();
+                            System.out.println(Thread.currentThread().getName()+" : statement="+statement.isClosed());
+                            statement = connection.createStatement();
                         } catch (SQLException e) {
                             e.printStackTrace();
                             logger.error("入表 kafka_offset 出错!",e);
                         }
+                        start = now;
+                        count = 0;
                     }
 
                 }
@@ -151,8 +160,9 @@ public class PhoenixSink extends RichSinkFunction {
         Map<String,String> headMap = tableMap.get(ITableMessageParse.HEAD);
         String operate = headMap.get(ITableMessageParse.OPERATE);
         String tableName = headMap.get(ITableMessageParse.TABLE_NAME);
-        if(!confTableName.equals(tableName))
+        if(!confTableName.toUpperCase().equals(tableName))
         {
+            System.out.println("confTableName.toUpperCase()="+confTableName.toUpperCase());
             return sql;
         }
         if("Insert".equals(operate)||"Update".equals(operate))
