@@ -1,4 +1,4 @@
-package com.asiainfo.connect.consumer;
+package com.asiainfo.connect.source;
 
 import com.asiainfo.connect.jobconfig.ConstantConfig;
 import com.asiainfo.connect.jobconfig.JobConfigBean;

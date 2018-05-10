@@ -8,4 +8,6 @@ public interface ConstantConfig {
 
     public static final String ZOOKEEPER_CONNECT="10.1.245.142:12181,10.1.245.143:12181,10.1.245.144:12181";
 
+    public static final String HDFS_URI="hdfs://10.1.245.142:8020";
+
 }

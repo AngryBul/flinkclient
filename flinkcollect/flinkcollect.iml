@@ -199,5 +199,7 @@
     <orderEntry type="library" name="Maven: com.ibm.icu:icu4j:60.1" level="project" />
     <orderEntry type="library" name="Maven: com.ibm.icu:icu4j-localespi:60.1" level="project" />
     <orderEntry type="library" name="Maven: com.ibm.icu:icu4j-charset:60.1" level="project" />
+    <orderEntry type="library" name="Maven: dom4j:dom4j:1.6.1" level="project" />
+    <orderEntry type="library" name="Maven: xml-apis:xml-apis:1.0.b2" level="project" />
   </component>
 </module>

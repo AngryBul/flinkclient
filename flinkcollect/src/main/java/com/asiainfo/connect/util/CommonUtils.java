@@ -2,7 +2,15 @@ package com.asiainfo.connect.util;
 
 import com.asiainfo.connect.jobconfig.ConstantConfig;
 import com.asiainfo.connect.jobconfig.JobConfigBean;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,6 +19,24 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class CommonUtils {
+
+    private static FileSystem fs;
+
+    private static  final Logger logger = LoggerFactory.getLogger(CommonUtils.class);
+
+    static
+    {
+        Configuration conf = new Configuration();
+        try {
+            fs= FileSystem.get(new URI(ConstantConfig.HDFS_URI), conf, "root");
+        } catch (Exception e) {
+            logger.error("HDFS 连接出错",e);
+            e.printStackTrace();
+
+        }
+
+    }
+
     private CommonUtils()
     {
     }
@@ -52,6 +78,17 @@ public class CommonUtils {
         Date date = new Date();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         return simpleDateFormat.format(date);
+    }
+
+    public static final boolean put2Hdfs(String src,String dest)
+    {
+
+        try {
+            fs.copyFromLocalFile(new Path(src),new Path(dest));
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
 }
