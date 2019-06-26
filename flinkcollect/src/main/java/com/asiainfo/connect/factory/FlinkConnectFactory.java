@@ -16,6 +16,8 @@ public class FlinkConnectFactory {
     {
         public  void createJob(String jobId) throws Exception {
             JobConfigBean jobConfig = CommonUtils.getJobConfig(jobId);
+
+
             String parallelism = jobConfig.getParallelism();
             StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
             env.setParallelism(Integer.parseInt(parallelism));
